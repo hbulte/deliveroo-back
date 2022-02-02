@@ -1,0 +1,66 @@
+version:
+  '3.7'
+  #######################
+  ## POSTGRES DATABASE ##
+  #######################
+
+services:
+  postgres:
+    container_name: postgres_db
+    image: postgres:latest
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    volumes:
+      - postgres:/data/postgres
+    env_file:
+      - .env
+    networks:
+      - postgres
+
+  #####################
+  ## PGADMIN CONSOLE ##
+  #####################
+
+  pgadmin:
+    container_name: pg_admin
+    image: dpage/pgadmin4
+    ports:
+      - 8080:80
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    env_file:
+      - .env
+    networks:
+      - postgres
+    logging:
+      driver: none
+
+  #####################
+  ##       API       ##
+  #####################
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    networks:
+      - postgres
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - postgres_db
+    restart: always
+    command: npm run start:dev
+    container_name: api
+
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
